@@ -29,26 +29,29 @@ export default function LiquidText() {
   };
 
   const generateWavePath = (mouseX, mouseY, isIdle = false) => {
-    const baseHeight = 50;
-    const amplitude = isIdle ? 5 : Math.max(5, 15 - Math.abs(mouseY - 50) * 0.3);
-    const frequency = isIdle ? 0.02 : 0.03;
-    let path = `M0,${baseHeight}`;
+    const baseHeight = 70; // Adjusted base height for bigger font
+    const amplitude = isIdle ? 10 : Math.max(10, 15 - Math.abs(mouseY - 70) * 0.4); // Bigger wave motion
+    const frequency = isIdle ? 0.015 : 0.02; // Smoother frequency for larger wave
+    const phaseShift = Math.PI / 2;
 
-    for (let i = 0; i <= 300; i += 30) {
-      const y = baseHeight + amplitude * Math.sin((i - mouseX) * frequency);
+    let path = `M0,${baseHeight}`;
+  
+    for (let i = 0; i <= 400; i += 40) {
+      const y = baseHeight + amplitude * Math.sin((i - mouseX) * frequency + phaseShift);
       path += ` L${i},${y}`;
     }
-
-    path += " V100 H0 Z";
+  
+    path += " V110 H0 Z"; // Match SVG height (was 100, now 110)
     return path;
   };
+  
 
   const handleMouseMove = (event) => {
     isInteracting.current = true;
     if (idleTimeline.current) idleTimeline.current.kill(); // Stop idle animation
     
     const { offsetX, offsetY } = event.nativeEvent;
-    const clampedX = Math.max(0, Math.min(300, offsetX));
+    const clampedX = Math.max(0, Math.min(400, offsetX));
     const clampedY = Math.max(40, Math.min(60, offsetY));
 
     gsap.to(waveRef.current, {
@@ -82,9 +85,9 @@ export default function LiquidText() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
       <svg 
-        width="300" 
-        height="100" 
-        viewBox="0 0 300 100" 
+        width="400" 
+        height="120" 
+        viewBox="0 0 400 120" 
         className="text-white"
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
@@ -92,12 +95,12 @@ export default function LiquidText() {
       >
         <defs>
           <clipPath id="textClip">
-            <text x="50%" y="70%" textAnchor="middle" fontSize="80" fontWeight="bold" fill="black">
+            <text x="50%" y="75%" textAnchor="middle" fontSize="120" fontWeight="bold" fill="black">
               LIQUID
             </text>
           </clipPath>
         </defs>
-        <rect width="300" height="100" fill="#00AEEF" clipPath="url(#textClip)" />
+        <rect width="400" height="110" fill="#00AEEF" clipPath="url(#textClip)" />
         <path
           ref={waveRef}
           d={generateWavePath(0, 50, true)}
