@@ -16,20 +16,18 @@ export default function LiquidText() {
     
     idleTimeline.current = gsap.timeline({ repeat: -1, yoyo: true });
     idleTimeline.current.to(waveRef.current, {
-      // duration: 0.5,
       duration: 0.75,
       ease: "sine.inOut",
       attr: { d: generateWavePath(50, 50, true) },
     }).to(waveRef.current, {
-      // duration: 0.5,
       duration: 0.75,
       ease: "sine.inOut",
       attr: { d: generateWavePath(-50, 50, true) },
     });
   };
 
-  const generateWavePath = (mouseX, mouseY, isIdle = false) => {
-    const baseHeight = 70; // Adjusted base height for bigger font
+  const generateWavePath = (mouseX: number, mouseY: number, isIdle = false) => {
+    const baseHeight = 70;
     const amplitude = isIdle ? 10 : Math.max(10, 15 - Math.abs(mouseY - 70) * 0.4); // Bigger wave motion
     const frequency = isIdle ? 0.015 : 0.02; // Smoother frequency for larger wave
     const phaseShift = Math.PI / 2;
@@ -41,12 +39,12 @@ export default function LiquidText() {
       path += ` L${i},${y}`;
     }
   
-    path += " V110 H0 Z"; // Match SVG height (was 100, now 110)
+    path += " V110 H0 Z";
     return path;
   };
   
 
-  const handleMouseMove = (event) => {
+  const handleMouseMove = (event: MouseEvent) => {
     isInteracting.current = true;
     if (idleTimeline.current) idleTimeline.current.kill(); // Stop idle animation
     
@@ -79,7 +77,7 @@ export default function LiquidText() {
 
   const handleMouseLeave = () => {
     isInteracting.current = false;
-    startIdleAnimation(); // Restart idle animation
+    startIdleAnimation();
   };
 
   return (
