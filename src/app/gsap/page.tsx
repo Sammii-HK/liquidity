@@ -1,17 +1,30 @@
 "use client"
-import { useEffect, useRef, MouseEvent } from "react";
+import { useEffect, useRef, MouseEvent, useCallback } from "react";
 import { gsap } from "gsap";
 
 export default function LiquidText() {
-  const waveRef = useRef(null);
-  const isInteracting = useRef(false);
-  const idleTimeline = useRef(null);
+  const waveRef = useRef<SVGPathElement | null>(null);
+  const isInteracting = useRef<boolean>(false);
+  const idleTimeline = useRef<gsap.core.Timeline | null>(null);
 
-  useEffect(() => {
-    startIdleAnimation();
+  const generateWavePath = useCallback((mouseX: number, mouseY: number, isIdle: boolean = false): string => {
+    const baseHeight: number = 70;
+    const amplitude: number = isIdle ? 10 : Math.max(10, 15 - Math.abs(mouseY - 70) * 0.4); // Bigger wave motion
+    const frequency: number = isIdle ? 0.015 : 0.02; // Smoother frequency for larger wave
+    const phaseShift: number = Math.PI / 2;
+
+    let path: string = `M0,${baseHeight}`;
+  
+    for (let i = 0; i <= 400; i += 40) {
+      const y: number = baseHeight + amplitude * Math.sin((i - mouseX) * frequency + phaseShift);
+      path += ` L${i},${y}`;
+    }
+  
+    path += " V110 H0 Z";
+    return path;
   }, []);
 
-  const startIdleAnimation = () => {
+  const startIdleAnimation = useCallback((): void => {
     if (idleTimeline.current) idleTimeline.current.kill(); // Stop any existing idle animation
     
     idleTimeline.current = gsap.timeline({ repeat: -1, yoyo: true });
@@ -24,33 +37,19 @@ export default function LiquidText() {
       ease: "sine.inOut",
       attr: { d: generateWavePath(-50, 50, true) },
     });
-  };
+  }, [generateWavePath]);
 
-  const generateWavePath = (mouseX: number, mouseY: number, isIdle = false) => {
-    const baseHeight = 70;
-    const amplitude = isIdle ? 10 : Math.max(10, 15 - Math.abs(mouseY - 70) * 0.4); // Bigger wave motion
-    const frequency = isIdle ? 0.015 : 0.02; // Smoother frequency for larger wave
-    const phaseShift = Math.PI / 2;
+  useEffect(() => {
+    startIdleAnimation();
+  }, [startIdleAnimation]);
 
-    let path = `M0,${baseHeight}`;
-  
-    for (let i = 0; i <= 400; i += 40) {
-      const y = baseHeight + amplitude * Math.sin((i - mouseX) * frequency + phaseShift);
-      path += ` L${i},${y}`;
-    }
-  
-    path += " V110 H0 Z";
-    return path;
-  };
-  
-
-  const handleMouseMove = (event: MouseEvent) => {
+  const handleMouseMove = useCallback((event: MouseEvent<SVGSVGElement>): void => {
     isInteracting.current = true;
     if (idleTimeline.current) idleTimeline.current.kill(); // Stop idle animation
     
     const { offsetX, offsetY } = event.nativeEvent;
-    const clampedX = Math.max(0, Math.min(400, offsetX));
-    const clampedY = Math.max(40, Math.min(60, offsetY));
+    const clampedX: number = Math.max(0, Math.min(400, offsetX));
+    const clampedY: number = Math.max(40, Math.min(60, offsetY));
 
     gsap.to(waveRef.current, {
       duration: 0.5,
@@ -62,9 +61,9 @@ export default function LiquidText() {
       isInteracting.current = false;
       startIdleAnimation();
     }, 250);
-  };
+  }, [generateWavePath, startIdleAnimation]);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = useCallback((): void => {
     isInteracting.current = true;
     if (idleTimeline.current) idleTimeline.current.kill(); // Stop idle animation
     
@@ -73,12 +72,12 @@ export default function LiquidText() {
       ease: "power2.out",
       attr: { d: generateWavePath(150, 50) },
     });
-  };
+  }, [generateWavePath]);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback((): void => {
     isInteracting.current = false;
     startIdleAnimation();
-  };
+  }, [startIdleAnimation]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
