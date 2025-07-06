@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from "react";
-import { World, RigidBody, ColliderDesc, EventQueue, RigidBodyDesc } from '@dimforge/rapier2d-compat';
+import { World, RigidBody, ColliderDesc, RigidBodyDesc } from '@dimforge/rapier2d-compat';
 import Rapier from '@dimforge/rapier2d-compat';
 
 export default function LiquidText() {
@@ -10,42 +10,28 @@ export default function LiquidText() {
   useEffect(() => {
     const initRapier = async (): Promise<void> => {
       await Rapier.init();
-      const gravity = new Rapier.Vector2(0, 9.8);
+      
+      const gravity = new Rapier.Vector2(0, 1500); // Even stronger gravity for faster settling
       const world = new World(gravity);
 
-      // Create bounding walls matching the canvas size
-      const walls: RigidBody[] = [
-        world.createRigidBody(RigidBodyDesc.fixed().setTranslation(135, 72)), // Bottom
-        world.createRigidBody(RigidBodyDesc.fixed().setTranslation(135, -2)), // Top
-        world.createRigidBody(RigidBodyDesc.fixed().setTranslation(-2, 35)), // Left
-        world.createRigidBody(RigidBodyDesc.fixed().setTranslation(272, 35)), // Right
-      ];
+      // Create a simple ground collider
+      const groundCollider = ColliderDesc.cuboid(135, 3).setTranslation(135, 67);
+      world.createCollider(groundCollider);
 
-      walls.forEach((wall, index) => {
-        const sizes: [number, number][] = [
-          [270, 6], // Bottom
-          [270, 6], // Top
-          [6, 70],  // Left
-          [6, 70],  // Right
-        ];
-        const collider = ColliderDesc.cuboid(sizes[index][0] / 2, sizes[index][1] / 2);
-        world.createCollider(collider, wall);
-      });
-
-      // Create liquid particles
+      // Create many more small particles for realistic water effect
       const liquidParticles: RigidBody[] = [];
-      for (let i = 0; i < 1000; i++) {
-        const x: number = Math.random() * 268 + 1;
-        const y: number = Math.random() * 68 + 1;
+      for (let i = 0; i < 1200; i++) {
+        const x: number = Math.random() * 220 + 25;
+        const y: number = Math.random() * 40 + 5;
         const particle = world.createRigidBody(
-          RigidBodyDesc.dynamic().setTranslation(x, y)
+          RigidBodyDesc.dynamic()
+            .setTranslation(x, y)
+            .setLinearDamping(2.0) // Add damping for faster settling
         );
-        const collider = ColliderDesc.ball(2.5).setDensity(0.01).setRestitution(0.002);
+        const collider = ColliderDesc.ball(1.0).setDensity(0.6).setRestitution(0.02).setFriction(0.05);
         world.createCollider(collider, particle);
         liquidParticles.push(particle);
       }
-
-      const eventQueue = new EventQueue(false);
 
       // Get canvas context for rendering
       const canvas = canvasRef.current;
@@ -57,25 +43,34 @@ export default function LiquidText() {
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Set particle style
+        // Draw ground
+        ctx.fillStyle = '#333';
+        ctx.fillRect(0, 60, 270, 10);
+        
+        // Set particle style for water-like appearance
         ctx.fillStyle = '#00AEEF';
         ctx.globalAlpha = 0.8;
 
-        // Draw each particle
+        // Draw each particle as tiny water droplets
         liquidParticles.forEach((particle) => {
           const pos = particle.translation();
+          
+          // Smaller water droplets
           ctx.beginPath();
-          ctx.arc(pos.x, pos.y, 2.5, 0, Math.PI * 2);
+          ctx.arc(pos.x, pos.y, 1.0, 0, Math.PI * 2);
           ctx.fill();
         });
       };
 
       const step = (): void => {
-        world.step(eventQueue);
-        render(); // Add rendering to the animation loop
+        // Single physics step per frame for stability
+        world.step();
+        
+        render();
         requestAnimationFrame(step);
       };
-      step();
+      
+      requestAnimationFrame(step);
 
       const handleMouseMove = (event: MouseEvent): void => {
         if (!canvasRef.current) return;
@@ -84,20 +79,115 @@ export default function LiquidText() {
         const mouseX: number = event.clientX - rect.left;
         const mouseY: number = event.clientY - rect.top;
 
+        // Create strong dispersal effect around mouse cursor
         liquidParticles.forEach((particle) => {
           const pos = particle.translation();
           const dx: number = pos.x - mouseX;
           const dy: number = pos.y - mouseY;
           const distance: number = Math.sqrt(dx * dx + dy * dy);
-          if (distance > 15) return;
+          
+          // Affect particles within interaction radius
+          if (distance > 35) return;
+          
+          // Much stronger force for dramatic water displacement
+          const normalizedDistance = Math.max(distance, 0.1);
+          const forceStrength = Math.min(15000 / (normalizedDistance * normalizedDistance), 300);
+          
+          // Apply dispersal force away from mouse
+          const forceX = (dx / distance) * forceStrength;
+          const forceY = (dy / distance) * forceStrength;
+          
+          particle.applyImpulse(new Rapier.Vector2(forceX, forceY), true);
+        });
+      };
 
-          const force: number = Math.min(0.0008 / (distance + 1), 0.0001);
-          particle.applyImpulse(new Rapier.Vector2(force * dx, force * dy), true);
+      const handleClick = (event: MouseEvent): void => {
+        if (!canvasRef.current) return;
+        
+        const rect = canvasRef.current.getBoundingClientRect();
+        const mouseX: number = event.clientX - rect.left;
+        const mouseY: number = event.clientY - rect.top;
+
+        // Create explosive splash effect on click
+        liquidParticles.forEach((particle) => {
+          const pos = particle.translation();
+          const dx: number = pos.x - mouseX;
+          const dy: number = pos.y - mouseY;
+          const distance: number = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 50) return;
+          
+          const normalizedDistance = Math.max(distance, 0.1);
+          const forceStrength = Math.min(25000 / normalizedDistance, 500);
+          
+          const forceX = (dx / distance) * forceStrength;
+          const forceY = (dx / distance) * forceStrength * 0.3; // Less vertical force
+          
+          particle.applyImpulse(new Rapier.Vector2(forceX, forceY), true);
+        });
+      };
+
+      const handleTouchMove = (event: TouchEvent): void => {
+        if (!canvasRef.current) return;
+        event.preventDefault();
+        
+        const rect = canvasRef.current.getBoundingClientRect();
+        const touch = event.touches[0];
+        const touchX: number = touch.clientX - rect.left;
+        const touchY: number = touch.clientY - rect.top;
+
+        // Strong touch dispersal
+        liquidParticles.forEach((particle) => {
+          const pos = particle.translation();
+          const dx: number = pos.x - touchX;
+          const dy: number = pos.y - touchY;
+          const distance: number = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 35) return;
+          
+          const normalizedDistance = Math.max(distance, 0.1);
+          const forceStrength = Math.min(15000 / (normalizedDistance * normalizedDistance), 300);
+          
+          const forceX = (dx / distance) * forceStrength;
+          const forceY = (dy / distance) * forceStrength;
+          
+          particle.applyImpulse(new Rapier.Vector2(forceX, forceY), true);
+        });
+      };
+
+      const handleTouchStart = (event: TouchEvent): void => {
+        if (!canvasRef.current) return;
+        event.preventDefault();
+        
+        const rect = canvasRef.current.getBoundingClientRect();
+        const touch = event.touches[0];
+        const touchX: number = touch.clientX - rect.left;
+        const touchY: number = touch.clientY - rect.top;
+
+        // Explosive splash on touch start
+        liquidParticles.forEach((particle) => {
+          const pos = particle.translation();
+          const dx: number = pos.x - touchX;
+          const dy: number = pos.y - touchY;
+          const distance: number = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 50) return;
+          
+          const normalizedDistance = Math.max(distance, 0.1);
+          const forceStrength = Math.min(25000 / normalizedDistance, 500);
+          
+          const forceX = (dx / distance) * forceStrength;
+          const forceY = (dy / distance) * forceStrength * 0.3;
+          
+          particle.applyImpulse(new Rapier.Vector2(forceX, forceY), true);
         });
       };
 
       if (canvasRef.current) {
         canvasRef.current.addEventListener("mousemove", handleMouseMove);
+        canvasRef.current.addEventListener("click", handleClick);
+        canvasRef.current.addEventListener("touchmove", handleTouchMove, { passive: false });
+        canvasRef.current.addEventListener("touchstart", handleTouchStart, { passive: false });
       }
     };
 
