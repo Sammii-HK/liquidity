@@ -1,92 +1,99 @@
 'use client'
 
-
 import { useEffect, useRef } from "react";
-import Matter from "matter-js";
+import { World, RigidBody, ColliderDesc, EventQueue, RigidBodyDesc } from '@dimforge/rapier2d-compat';
+import Rapier from '@dimforge/rapier2d-compat';
 
 export default function LiquidText() {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    const engine = Matter.Engine.create();
-    const world = engine.world;
-    engine.world.gravity.y = 2.5; // Increased gravity for stronger downward pull
+    const initRapier = async (): Promise<void> => {
+      await Rapier.init();
+      const gravity = new Rapier.Vector2(0, 9.8);
+      const world = new World(gravity);
 
-    const render = Matter.Render.create({
-      canvas: canvasRef.current,
-      engine: engine,
-      options: {
-        width: 400,
-        height: 200,
-        wireframes: false,
-        background: "#1a1a2e",
-      },
-    });
+      // Create bounding walls matching the canvas size
+      const walls: RigidBody[] = [
+        world.createRigidBody(RigidBodyDesc.fixed().setTranslation(135, 72)), // Bottom
+        world.createRigidBody(RigidBodyDesc.fixed().setTranslation(135, -2)), // Top
+        world.createRigidBody(RigidBodyDesc.fixed().setTranslation(-2, 35)), // Left
+        world.createRigidBody(RigidBodyDesc.fixed().setTranslation(272, 35)), // Right
+      ];
 
-    // Create a Matter.js Runner
-    const runner = Matter.Runner.create();
-    Matter.Runner.run(runner, engine);
-
-    // Create a simple rectangular box container with thicker walls to fully contain particles
-    const container = [
-      Matter.Bodies.rectangle(200, 195, 420, 30, { isStatic: true, restitution: 0, render: { fillStyle: "#0077CC" } }), // Bottom
-      Matter.Bodies.rectangle(5, 100, 10, 220, { isStatic: true, restitution: 0, render: { fillStyle: "#0077CC" } }), // Left wall
-      Matter.Bodies.rectangle(395, 100, 10, 220, { isStatic: true, restitution: 0, render: { fillStyle: "#0077CC" } }), // Right wall
-    ];
-
-    // Create even more liquid particles with a smaller size
-    const liquidParticles = Array.from({ length: 1000 }).map(() =>
-      Matter.Bodies.circle(
-        200 + Math.random() * 80 - 40,
-        80 + Math.random() * 20,
-        0.8, // Even smaller particles for better fluid-like behavior
-        {
-          density: 0.02, // Increased density for more weight
-          friction: 0.01, // Reduced friction for smoother flow
-          frictionAir: 0.008, // Less air resistance to allow faster movement
-          restitution: 0.002, // Minimal bounce for a more liquid-like feel
-          render: { fillStyle: "#00AEEF" },
-        }
-      )
-    );
-
-    Matter.World.add(world, [...container, ...liquidParticles]);
-    Matter.Render.run(render);
-
-    const handleMouseMove = (event) => {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const mouseX = event.clientX - rect.left;
-      const mouseY = event.clientY - rect.top;
-
-      liquidParticles.forEach((particle) => {
-        const dx = particle.position.x - mouseX;
-        const dy = particle.position.y - mouseY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > 15) return; // Reduce repelling range further
-
-        const force = Math.min(0.0003 / (distance + 1), 0.00005); // Slightly stronger repelling force
-
-        Matter.Body.applyForce(particle, particle.position, {
-          x: force * dx,
-          y: force * dy,
-        });
+      walls.forEach((wall, index) => {
+        const sizes: [number, number][] = [
+          [270, 6], // Bottom
+          [270, 6], // Top
+          [6, 70],  // Left
+          [6, 70],  // Right
+        ];
+        const collider = ColliderDesc.cuboid(sizes[index][0] / 2, sizes[index][1] / 2);
+        world.createCollider(collider, wall);
       });
+
+      // Create liquid particles
+      const liquidParticles: RigidBody[] = [];
+      for (let i = 0; i < 1000; i++) {
+        const x: number = Math.random() * 268 + 1;
+        const y: number = Math.random() * 68 + 1;
+        const particle = world.createRigidBody(
+          RigidBodyDesc.dynamic().setTranslation(x, y)
+        );
+        const collider = ColliderDesc.ball(2.5).setDensity(0.01).setRestitution(0.002);
+        world.createCollider(collider, particle);
+        liquidParticles.push(particle);
+      }
+
+      const eventQueue = new EventQueue(false);
+
+      const step = (): void => {
+        world.step(eventQueue);
+        requestAnimationFrame(step);
+      };
+      step();
+
+      const handleMouseMove = (event: MouseEvent): void => {
+        if (!canvasRef.current) return;
+        
+        const rect = canvasRef.current.getBoundingClientRect();
+        const mouseX: number = event.clientX - rect.left;
+        const mouseY: number = event.clientY - rect.top;
+
+        liquidParticles.forEach((particle) => {
+          const pos = particle.translation();
+          const dx: number = pos.x - mouseX;
+          const dy: number = pos.y - mouseY;
+          const distance: number = Math.sqrt(dx * dx + dy * dy);
+          if (distance > 15) return;
+
+          const force: number = Math.min(0.0008 / (distance + 1), 0.0001);
+          particle.applyImpulse(new Rapier.Vector2(force * dx, force * dy), true);
+        });
+      };
+
+      if (canvasRef.current) {
+        canvasRef.current.addEventListener("mousemove", handleMouseMove);
+      }
     };
 
-    canvasRef.current.addEventListener("mousemove", handleMouseMove);
-    
-    return () => {
-      canvasRef.current.removeEventListener("mousemove", handleMouseMove);
-      Matter.Render.stop(render);
-      Matter.World.clear(world);
-      Matter.Engine.clear(engine);
-      Matter.Runner.stop(runner);
-    };
+    initRapier();
   }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <canvas ref={canvasRef} width={400} height={200} />
+    <div className="relative flex items-center justify-center min-h-screen bg-gray-900">
+      <canvas ref={canvasRef} width={270} height={70} className="absolute z-10" />
+      <svg width="270" height="70" className="absolute z-20" style={{ pointerEvents: "none" }}>
+        <defs>
+          <mask id="liquidMask">
+            <rect width="270" height="70" fill="white" />
+            <text x="50%" y="50%" textAnchor="middle" fontSize="70" fontWeight="bold" fill="black" dy=".35em">
+              LIQUID
+            </text>
+          </mask>
+        </defs>
+        <rect width="270" height="70" fill="#1a1a2e" mask="url(#liquidMask)" />
+      </svg>
     </div>
   );
 }
