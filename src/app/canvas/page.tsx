@@ -47,8 +47,32 @@ export default function LiquidText() {
 
       const eventQueue = new EventQueue(false);
 
+      // Get canvas context for rendering
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const render = (): void => {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Set particle style
+        ctx.fillStyle = '#00AEEF';
+        ctx.globalAlpha = 0.8;
+
+        // Draw each particle
+        liquidParticles.forEach((particle) => {
+          const pos = particle.translation();
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      };
+
       const step = (): void => {
         world.step(eventQueue);
+        render(); // Add rendering to the animation loop
         requestAnimationFrame(step);
       };
       step();
