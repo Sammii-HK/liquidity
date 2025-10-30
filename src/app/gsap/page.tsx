@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useRef, MouseEvent, useCallback } from "react";
 import { gsap } from "gsap";
+import Navigation from "@/components/Navigation";
 
 export default function LiquidText() {
   const waveRef = useRef<SVGPathElement | null>(null);
@@ -80,8 +81,10 @@ export default function LiquidText() {
   }, [startIdleAnimation]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <svg 
+    <div className="min-h-screen bg-gray-900 pt-20">
+      <Navigation />
+      <div className="flex items-center justify-center">
+        <svg 
         width="400" 
         height="120" 
         viewBox="0 0 400 120" 
@@ -105,6 +108,7 @@ export default function LiquidText() {
           clipPath="url(#textClip)"
         />
       </svg>
+      </div>
     </div>
   );
 }

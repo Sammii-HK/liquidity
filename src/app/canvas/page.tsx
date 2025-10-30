@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { World, RigidBody, ColliderDesc, RigidBodyDesc } from '@dimforge/rapier2d-compat';
 import Rapier from '@dimforge/rapier2d-compat';
+import Navigation from "@/components/Navigation";
 
 export default function LiquidText() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -267,7 +268,8 @@ export default function LiquidText() {
   }, []);
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gray-900">
+    <div className="relative flex items-center justify-center min-h-screen bg-gray-900 pt-20 pb-20">
+      <Navigation />
       <canvas ref={canvasRef} width={300} height={100} className="border border-gray-600" />
     </div>
   );

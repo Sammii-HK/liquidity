@@ -2,6 +2,8 @@
 
 Experimental Next.js project exploring advanced animation techniques for creating liquid text effects through multiple approaches.
 
+**Live Site**: [https://liquidity-ten.vercel.app/](https://liquidity-ten.vercel.app/)
+
 ## Technical Stack
 
 - **Framework**: Next.js 15.1.7 (App Router) with React 19
@@ -115,6 +117,7 @@ yarn install
 yarn dev
 
 # Navigate to experiments
+# / - Home page with tab navigation
 # /gsap - GSAP SVG animation
 # /canvas - Rapier physics simulation
 ```
