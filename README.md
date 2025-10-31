@@ -4,6 +4,8 @@ Experimental Next.js project exploring advanced animation techniques for creatin
 
 **Live Site**: [https://liquidity-ten.vercel.app/](https://liquidity-ten.vercel.app/)
 
+<img width="1708" height="980" alt="Screenshot 2025-10-31 at 13 51 56" src="https://github.com/user-attachments/assets/d853e47d-31a0-40e5-83ca-27efd7b63bea" />
+
 ## Tech Stack
 
 - **Framework**: Next.js 15.1.7 (App Router) with React 19
