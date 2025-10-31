@@ -270,12 +270,14 @@ export default function LiquidText() {
   return (
     <div className="min-h-screen bg-gray-900 pt-20">
       <Navigation />
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)]">
-        <div className="mb-8 text-center">
+      <div className="pt-8 pb-8">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Rapier Physics Simulation</h1>
           <p className="text-gray-400">Move your mouse or touch the canvas to interact with the liquid particles</p>
         </div>
-        <canvas ref={canvasRef} width={300} height={100} className="border border-gray-600 rounded-lg shadow-lg" />
+        <div className="flex items-center justify-center min-h-[calc(100vh-15rem)]">
+          <canvas ref={canvasRef} width={300} height={100} className="border border-gray-600 rounded-lg shadow-lg" />
+        </div>
       </div>
     </div>
   );

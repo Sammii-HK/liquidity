@@ -83,12 +83,13 @@ export default function LiquidText() {
   return (
     <div className="min-h-screen bg-gray-900 pt-20">
       <Navigation />
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)]">
-        <div className="mb-8 text-center">
+      <div className="pt-8 pb-8">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">GSAP Wave Animation</h1>
           <p className="text-gray-400">Move your mouse over the text to create interactive waves</p>
         </div>
-        <svg 
+        <div className="flex items-center justify-center min-h-[calc(100vh-15rem)]">
+          <svg 
           width="400" 
           height="120" 
           viewBox="0 0 400 120" 
@@ -109,9 +110,10 @@ export default function LiquidText() {
             ref={waveRef}
             d={generateWavePath(0, 50, true)}
             fill="#0077CC"
-            clipPath="url(#textClip)"
-          />
+          clipPath="url(#textClip)"
+        />
         </svg>
+        </div>
       </div>
     </div>
   );
