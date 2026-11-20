@@ -4,28 +4,41 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "npm run lint:icons && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "npm run lint:icons && eslint .",
+    "lint:icons": "node scripts/lint-icons.mjs --root . --summary",
+    "test:icons": "node --test scripts/icons.test.mjs",
+    "test:unit": "vitest run src",
+    "test": "npm run test:icons && npm run test:unit"
   },
   "dependencies": {
     "@dimforge/rapier2d-compat": "^0.14.0",
     "gsap": "^3.12.7",
+    "lucide-react": "0.577.0",
     "next": "15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "16.3.0",
     "@types/matter-js": "^0.19.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
+    "jsdom": "26.1.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "7.3.8",
+    "vitest": "4.1.12"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "resolutions": {
+    "vitest/vite": "7.3.8"
+  }
 }

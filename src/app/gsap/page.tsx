@@ -1,120 +1,27 @@
-"use client"
-import { useEffect, useRef, MouseEvent, useCallback } from "react";
-import { gsap } from "gsap";
-import Navigation from "@/components/Navigation";
-
-export default function LiquidText() {
-  const waveRef = useRef<SVGPathElement | null>(null);
-  const isInteracting = useRef<boolean>(false);
-  const idleTimeline = useRef<gsap.core.Timeline | null>(null);
-
-  const generateWavePath = useCallback((mouseX: number, mouseY: number, isIdle: boolean = false): string => {
-    const baseHeight: number = 70;
-    const amplitude: number = isIdle ? 10 : Math.max(10, 15 - Math.abs(mouseY - 70) * 0.4); // Bigger wave motion
-    const frequency: number = isIdle ? 0.015 : 0.02; // Smoother frequency for larger wave
-    const phaseShift: number = Math.PI / 2;
-
-    let path: string = `M0,${baseHeight}`;
-  
-    for (let i = 0; i <= 400; i += 40) {
-      const y: number = baseHeight + amplitude * Math.sin((i - mouseX) * frequency + phaseShift);
-      path += ` L${i},${y}`;
-    }
-  
-    path += " V110 H0 Z";
-    return path;
-  }, []);
-
-  const startIdleAnimation = useCallback((): void => {
-    if (idleTimeline.current) idleTimeline.current.kill(); // Stop any existing idle animation
-    
-    idleTimeline.current = gsap.timeline({ repeat: -1, yoyo: true });
-    idleTimeline.current.to(waveRef.current, {
-      duration: 0.75,
-      ease: "sine.inOut",
-      attr: { d: generateWavePath(50, 50, true) },
-    }).to(waveRef.current, {
-      duration: 0.75,
-      ease: "sine.inOut",
-      attr: { d: generateWavePath(-50, 50, true) },
-    });
-  }, [generateWavePath]);
-
-  useEffect(() => {
-    startIdleAnimation();
-  }, [startIdleAnimation]);
-
-  const handleMouseMove = useCallback((event: MouseEvent<SVGSVGElement>): void => {
-    isInteracting.current = true;
-    if (idleTimeline.current) idleTimeline.current.kill(); // Stop idle animation
-    
-    const { offsetX, offsetY } = event.nativeEvent;
-    const clampedX: number = Math.max(0, Math.min(400, offsetX));
-    const clampedY: number = Math.max(40, Math.min(60, offsetY));
-
-    gsap.to(waveRef.current, {
-      duration: 0.5,
-      ease: "power3.out",
-      attr: { d: generateWavePath(clampedX, clampedY) },
-    });
-
-    setTimeout(() => {
-      isInteracting.current = false;
-      startIdleAnimation();
-    }, 250);
-  }, [generateWavePath, startIdleAnimation]);
-
-  const handleMouseEnter = useCallback((): void => {
-    isInteracting.current = true;
-    if (idleTimeline.current) idleTimeline.current.kill(); // Stop idle animation
-    
-    gsap.to(waveRef.current, {
-      duration: 0.7,
-      ease: "power2.out",
-      attr: { d: generateWavePath(150, 50) },
-    });
-  }, [generateWavePath]);
-
-  const handleMouseLeave = useCallback((): void => {
-    isInteracting.current = false;
-    startIdleAnimation();
-  }, [startIdleAnimation]);
-
-  return (
-    <div className="min-h-screen bg-gray-900 pt-20">
-      <Navigation />
-      <div className="pt-8 pb-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">GSAP Wave Animation</h1>
-          <p className="text-gray-400">Move your mouse over the text to create interactive waves</p>
-        </div>
-        <div className="flex items-center justify-center min-h-[calc(100vh-15rem)]">
-          <svg 
-          width="400" 
-          height="120" 
-          viewBox="0 0 400 120" 
-          className="text-white"
-          onMouseMove={handleMouseMove}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          <defs>
-            <clipPath id="textClip">
-              <text x="50%" y="75%" textAnchor="middle" fontSize="120" fontWeight="bold" fill="black">
-                LIQUID
-              </text>
-            </clipPath>
-          </defs>
-          <rect width="400" height="110" fill="#00AEEF" clipPath="url(#textClip)" />
-          <path
-            ref={waveRef}
-            d={generateWavePath(0, 50, true)}
-            fill="#0077CC"
-          clipPath="url(#textClip)"
-        />
-        </svg>
-        </div>
-      </div>
-    </div>
-  );
+'use client';
+import {useEffect,useId,useRef,useState} from 'react';
+import {gsap} from 'gsap';
+import {Copy,MoveHorizontal,Pause,Play,RotateCcw} from 'lucide-react';
+import {currentWaveSvg} from '@/lib/wave-export';
+import {scenePoint,wavePath} from '@/lib/motion';
+import {createWaveController,WaveController} from '@/lib/wave-controller';
+import {useMotion} from '@/lib/use-motion';
+export default function WaveStudy(){
+ const svg=useRef<SVGSVGElement>(null);
+ const path=useRef<SVGPathElement>(null),controller=useRef<WaveController|null>(null);
+ const {paused,setPaused,reduced,ready}=useMotion();
+ const pausedRef=useRef(paused);pausedRef.current=paused;
+ const [amplitude,setAmplitude]=useState(12),[speed,setSpeed]=useState(1);
+ const [copyNotice,setCopyNotice]=useState(''),[manualSvg,setManualSvg]=useState('');
+ const clip=useId().replace(/:/g,'');
+ useEffect(()=>{
+   if(!path.current||!ready)return;
+   const owned=createWaveController(path.current,gsap,{amplitude:12,speed:1,paused:pausedRef.current});controller.current=owned;
+   const visibility=()=>owned.setPaused(pausedRef.current||document.hidden);document.addEventListener('visibilitychange',visibility);visibility();
+   return()=>{document.removeEventListener('visibilitychange',visibility);owned.dispose();controller.current=null;};
+ },[ready]);
+ useEffect(()=>{controller.current?.setPaused(paused||document.hidden);},[paused,ready]);
+ useEffect(()=>{controller.current?.configure(amplitude,speed);},[amplitude,speed,ready]);
+ return <main id="main"><section className="study-intro"><p className="eyebrow">01 / The curve</p><h1>Shape a wave.</h1><p>A sine-based path moves inside an SVG word mask. Change the height and pace, or use the preview to move it yourself.</p></section><div className="workbench"><section className="preview-panel" aria-labelledby="wave-preview-title"><div className="panel-top"><h2 id="wave-preview-title">The SVG study</h2><span role="status">{paused?'Paused':'Playing'}</span></div><button className="wave-stage" aria-label="Shift the wave. Enter or Space shifts it; left and right arrows move it." onClick={()=>controller.current?.shift(80)} onKeyDown={event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();controller.current?.shift(event.key==='ArrowRight'?40:-40);}}} onPointerMove={event=>{const p=scenePoint(event.clientX,event.clientY,svg.current?.getBoundingClientRect()||event.currentTarget.getBoundingClientRect(),400,120);controller.current?.interact(p.x);}} onPointerLeave={()=>controller.current?.leave()}><svg ref={svg} viewBox="0 0 400 120" fontFamily="Arial, Helvetica, sans-serif" role="img" aria-label="LIQUID, filled with a moving SVG wave"><defs><clipPath id={clip}><text x="200" y="91" textAnchor="middle" fontSize="98" fontWeight="750">LIQUID</text></clipPath></defs><text className="word-outline" fill="none" stroke="#42616c" strokeWidth="0.4" x="200" y="91" textAnchor="middle" fontSize="98" fontWeight="750">LIQUID</text><g clipPath={`url(#${clip})`}><rect width="400" height="120" fill="#316d7b"/><path ref={path} d={wavePath(200)} fill="#a6e1db"/></g></svg></button><p className="stage-help">Move a pointer across the word, or focus it and use Enter, Space or the arrow keys. Manual shifts still work while paused.</p></section>
+ <section className="control-panel" aria-labelledby="wave-controls"><p className="eyebrow">Make it move</p><h2 id="wave-controls">A curve, with controls</h2><div className="playback"><button onClick={()=>setPaused(!paused)}>{paused?<Play size={17} aria-hidden="true"/>:<Pause size={17} aria-hidden="true"/>}{paused?'Play':'Pause'}</button><button onClick={()=>{setAmplitude(12);setSpeed(1);controller.current?.reset();}}><RotateCcw size={17} aria-hidden="true"/>Reset</button></div><label className="range-label" htmlFor="wave-height"><span>Wave height</span><output aria-hidden="true">{amplitude}</output></label><input id="wave-height" type="range" min="0" max="28" value={amplitude} onChange={e=>setAmplitude(Number(e.target.value))}/><label className="range-label" htmlFor="wave-speed"><span>Playback speed</span><output aria-hidden="true">{speed.toFixed(1)}×</output></label><input id="wave-speed" type="range" min="0.5" max="2" step="0.1" value={speed} onChange={e=>setSpeed(Number(e.target.value))}/><button className="full-button" onClick={()=>controller.current?.shift(80)}><MoveHorizontal size={17} aria-hidden="true"/>Shift the wave</button><button className="full-button" onClick={async()=>{if(!svg.current)return;const source=currentWaveSvg(svg.current);setCopyNotice('');setManualSvg('');try{await navigator.clipboard.writeText(source);setCopyNotice('SVG copied. This is the current static shape.');}catch{setManualSvg(source);setCopyNotice('Could not copy automatically. Select the SVG below to copy it manually.');}}}><Copy size={17} aria-hidden="true"/>Copy current SVG</button>{copyNotice&&<p className="control-note" role="status">{copyNotice}</p>}{manualSvg&&<textarea className="svg-source" aria-label="SVG source to copy manually" readOnly value={manualSvg} rows={5} onFocus={event=>event.currentTarget.select()}/>}<p className="control-note">The SVG keeps editable text and the current curve. It does not include the animation.</p><p className="control-note">{reduced?'Reduced motion starts the study paused. Play is your choice.':'Pause holds the current shape. Reset restores height, speed and shape, keeping your playback choice.'}</p></section></div><aside className="method-note"><h2>How the shape is made</h2><p>A sampled sine curve defines the waterline; GSAP interpolates the path between positions. A text clip reveals the fill. This is a controlled graphic, not a physical water model. The settings change the graphic; Copy current SVG lets you take a static shape into another tool.</p></aside></main>;
 }

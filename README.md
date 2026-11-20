@@ -1,87 +1,34 @@
-# Liquidity - Interactive Animation Experiments
+# Liquidity
 
-Experimental Next.js project exploring advanced animation techniques for creating liquid text effects.
+Two local motion studies built with Next.js, React, GSAP and Rapier2D. The latest product pass is a local candidate, not a published deployment.
 
-**Live Site**: [https://liquidity-ten.vercel.app/](https://liquidity-ten.vercel.app/)
+## The studies
 
-## Tech Stack
+- `/gsap`: a sampled sine path inside an SVG word mask. Height and speed controls affect the actual GSAP animation. Pointer, Enter/Space and arrow keys provide interaction; pause holds the shape. Copy current SVG exports the rendered static path and editable text, with explicit clipboard failure/manual-copy feedback. It does not export the running animation or outline/embed the font.
+- `/canvas`: Rapier circles inside a box, filtered through cached text pixels. Gravity, damping and strong containment are retained. The default is 750 bodies, with 1,500 and 2,500 selectable. Centre pulse is a native keyboard alternative; when paused it advances one physics step. Reset respawns the selected count. These are rigid bodies and a text mask, not a fluid solver.
 
-- **Framework**: Next.js 15.1.7 (App Router) with React 19
-- **Animation Libraries**: 
-  - [GSAP 3.12.7](https://greensock.com/gsap/) - SVG path animation
-  - [Rapier2D 0.14.0](https://rapier.rs/) - 2D physics engine (WebAssembly)
+Both have visible navigation, native controls, explicit playback and a reduced-motion initial pause. The browser's hidden state also pauses the owned animation work. Physical touch, every browser/assistive technology and frame-rate performance are not certified.
 
-## Animation Experiments
+## Lifecycle and input boundary
 
-### GSAP Wave Animation (`/gsap`)
+The particle scene checks Canvas before awaiting the local engine, suppresses late initialisation after disposal, owns/cancels its RAF, disconnects resize/visibility listeners and frees its world. A fixed timestep has bounded catch-up; display coordinates convert into the simulation's scene coordinates independently of CSS scale and DPR. Zero-distance impulses remain finite, and vertical splash uses its Y displacement.
 
-SVG-based liquid text using GSAP timelines with mathematical wave generation.
+The wave owns its idle timeline, interaction tween and one replaceable resume timer. Navigation/disposal clears all three. Each instance has a unique clip ID, and current-SVG export includes namespace, dimensions and font declarations. The font remains editable/system dependent.
 
-**Implementation:**
-- SVG path morphing with interactive mouse tracking
-- Timeline management with `useCallback` hooks to prevent re-renders
-- Wave formula: `amplitude * sin((x - mouseX) * frequency + phaseShift)`
-- SVG clip-path masking to constrain effects within text
+## Local checks
 
-**Resources:** [GSAP Timeline](https://greensock.com/docs/v3/GSAP/gsap.timeline()) | [Attr Plugin](https://greensock.com/docs/v3/Plugins/AttrPlugin)
+Use Node 24. No environment files or external services are needed.
 
----
-
-### Rapier Physics Simulation (`/canvas`)
-
-Canvas-based liquid simulation with 2500 particles using a real physics engine.
-
-**Performance Optimizations:**
-- Cached text mask (single `getImageData()` call)
-- Batch canvas rendering (single `beginPath()` + `fill()`)
-- Squared distance calculations to avoid `sqrt()`
-- Single physics step per frame
-
-**Physics Configuration:**
-- Gravity: 2500, Linear damping: 8.0
-- Density: 0.5, Restitution: 0.001, Friction: 0.02
-
-**Interaction Model:**
-- Mouse move/click: Distance-based forces with inverse square law
-- Touch: Same model with passive event prevention
-- Multi-tier containment to keep particles within text bounds
-
-**Resources:** [Rapier2D Docs](https://rapier.rs/docs/user_guides/javascript/getting_started_js/) | [Compat Package](https://www.npmjs.com/package/@dimforge/rapier2d-compat)
-
-## Technical Decisions
-
-**GSAP Approach:**
-- Lightweight, predictable animations
-- Better for simple decorative effects
-- Easy to fine-tune timing and easing
-
-**Rapier Approach:**
-- Realistic physics-based behavior
-- Natural particle interactions
-- Higher computational cost but acceptable performance (~60fps)
-
-## Development
-
-```bash
-yarn install
-yarn dev
-
-# Navigate to:
-# / - Home page with navigation
-# /gsap - GSAP SVG animation
-# /canvas - Rapier physics simulation
+```sh
+yarn install --ignore-scripts --frozen-lockfile
+yarn lint
+yarn test
+yarn build
+yarn start --hostname 127.0.0.1 --port 4846
 ```
 
-## Architecture
+Normal lint/build run the canonical icon source gate. Normal test runs all eleven shared icon regressions plus the motion, ownership and actual-control checks. Dependency and browser receipts are in `docs/quality/` once saved. All artwork, text masks and numerical notation remain domain content; UI icons use Lucide.
 
-- Client components (`'use client'`) required for DOM/Canvas access
-- React refs for direct DOM manipulation and timeline management
-- Effect cleanup via timeline kills and event listener removal
-- TypeScript strict mode with explicit physics object types
+Primary API references: [Rapier JavaScript guide](https://rapier.rs/docs/user_guides/javascript/getting_started_js/), [Rapier World ownership](https://rapier.rs/javascript2d/classes/World.html), [GSAP timelines](https://gsap.com/docs/v3/GSAP/Timeline/).
 
-## Future Considerations
-
-- WebGL rendering for Rapier particles (better performance at scale)
-- React Three Fiber integration for 3D liquid effects
-- Custom easing functions for GSAP waves
-- Particle system optimization via spatial partitioning
+The earlier README's approximate 60fps claim was not measured and has been removed. No new FPS, byte-size or broad no-leak guarantee is claimed from local checks.
