@@ -32,3 +32,9 @@ Normal lint/build run the canonical icon source gate. Normal test runs all eleve
 Primary API references: [Rapier JavaScript guide](https://rapier.rs/docs/user_guides/javascript/getting_started_js/), [Rapier World ownership](https://rapier.rs/javascript2d/classes/World.html), [GSAP timelines](https://gsap.com/docs/v3/GSAP/Timeline/).
 
 The earlier README's approximate 60fps claim was not measured and has been removed. No new FPS, byte-size or broad no-leak guarantee is claimed from local checks.
+
+## Earlier published screenshot
+
+<img width="1708" height="980" alt="Screenshot 2025-10-31 at 13 51 56" src="https://github.com/user-attachments/assets/d853e47d-31a0-40e5-83ca-27efd7b63bea" />
+
+The screenshot predates this local controls and lifecycle review. See the verification receipt above for the checked candidate.
