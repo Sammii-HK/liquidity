@@ -21,3 +21,12 @@ Normal test runs 11 unchanged canonical icon regressions and 13 motion/lifecycle
 Normal lint and the full Next production build pass with zero source icon findings. ESLint explicitly ignores generated Next/output/coverage folders, rather than attempting to lint its own compiled bundle. The original unmeasured 60fps README claim is removed. No full no-leak, physical-touch, cross-browser, assistive-technology or performance certification is inferred.
 
 Primary references: [Rapier World ownership](https://rapier.rs/javascript2d/classes/World.html), [Rapier compatibility initialisation](https://rapier.rs/docs/user_guides/javascript/getting_started_js/), [GSAP timeline cleanup](https://gsap.com/docs/v3/GSAP/Timeline/). The compatibility engine is local WASM, not a network simulation provider.
+
+
+## Final local dependency and browser receipt
+
+The compatible dependency follow-up uses Next15.5.29 and matching ESLint configuration, preserving React19 and the existing Yarn lock. A scoped Next/PostCSS patch keeps the compatible dependency graph at zero full and zero production audit findings. Frozen installation,13 motion/control cases plus11canonical icon cases, normal lint, standalone types and the complete production build pass. Logs and Yarn audit summaries were checked directly before saving this batch.
+
+Actual Chrome checked the final local build on127.0.0.1:4846: real Rapier WASM loaded; pause, centre pulse, original2500-body count selection and reset worked with one canvas. The wave's keyboard/manual shift and reset changed the real controller. At390px, controls measured at least44px and the page had no horizontal overflow. Viewport was reset and CUA completion recorded before handoff.
+
+Actual captures in.codex-artifacts show the overview, wave and particle studies. The wave desktop view is scrolled and its caption must say so. Copy UI reported success but the browser clipboard read was empty, so actual pasted bytes remain unverified. Mocked XML/current-shape and clipboard-failure contract cases pass; this is not claimed as real clipboard-content proof. The export is a static SVG with editable text, not a running timeline or outlined font. No services, providers, accounts, private data, DB, physical-touch or broad accessibility/performance proof was involved. This source and dependency batch remains local and unreleased.
