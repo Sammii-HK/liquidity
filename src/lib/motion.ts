@@ -9,7 +9,8 @@ export function impulseAt(position:{x:number;y:number},origin:{x:number;y:number
   if(!Number.isFinite(distance)||distance>radius)return null;
   const nx=distance>0.0001?dx/distance:0,ny=distance>0.0001?dy/distance:-1;
   const safe=Math.max(distance,0.1);
-  const strength=kind==='splash'?Math.min(25000/safe,500):Math.min(10000/(safe*safe),300);
+  // Splash eases from full strength at the centre to nothing at the rim, so a tap reads as a ripple, not a flat shove.
+  const strength=kind==='splash'?500*(1-distance/radius)**2:Math.min(10000/(safe*safe),300);
   return {x:nx*strength,y:ny*strength*(kind==='splash'?0.3:1)};
 }
 export function wavePath(phase:number,amplitude=12) {
