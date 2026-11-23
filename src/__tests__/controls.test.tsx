@@ -37,7 +37,7 @@ it('copies the actual current standalone SVG and exposes manual copy on clipboar
  const write=vi.fn().mockResolvedValue(undefined);Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:write}});
  render(<WaveStudy/>);fireEvent.click(screen.getByRole('button',{name:'Pause'}));fireEvent.click(screen.getByRole('button',{name:'Shift the wave'}));
  fireEvent.click(screen.getByRole('button',{name:'Copy current SVG'}));
- await screen.findByText('SVG copied. This is the current static shape.');
+ await screen.findByText('Copied the current shape as SVG.');
  const source=write.mock.calls[0][0] as string,parsed=new DOMParser().parseFromString(source,'image/svg+xml');
  expect(parsed.querySelector('parsererror')).toBeNull();expect(parsed.documentElement.getAttribute('width')).toBe('400');expect(parsed.documentElement.getAttribute('font-family')).toContain('Arial');
  expect(parsed.querySelector('path')!.getAttribute('d')).toBe(screen.getByRole('img',{name:'LIQUID, filled with a moving SVG wave'}).querySelector('path')!.getAttribute('d'));

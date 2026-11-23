@@ -1,40 +1,32 @@
 # Liquidity
 
-Two local motion studies built with Next.js, React, GSAP and Rapier2D. The latest product pass is a local candidate, not a published deployment.
+Two ways to move the same word. A small Next.js site with two interactive studies of liquid-looking type.
+
+**Live site:** [liquidity-ten.vercel.app](https://liquidity-ten.vercel.app/)
+
+<img width="1708" height="980" alt="Liquidity screenshot" src="https://github.com/user-attachments/assets/d853e47d-31a0-40e5-83ca-27efd7b63bea" />
 
 ## The studies
 
-- `/gsap`: a sampled sine path inside an SVG word mask. Height and speed controls affect the actual GSAP animation. Pointer, Enter/Space and arrow keys provide interaction; pause holds the shape. Copy current SVG exports the rendered static path and editable text, with explicit clipboard failure/manual-copy feedback. It does not export the running animation or outline/embed the font.
-- `/canvas`: Rapier circles inside a box, filtered through cached text pixels. Gravity, damping and strong containment are retained. The default is 750 bodies, with 1,500 and 2,500 selectable. Centre pulse is a native keyboard alternative; when paused it advances one physics step. Reset respawns the selected count. These are rigid bodies and a text mask, not a fluid solver.
+- **Wave (`/gsap`)**: a sine-based SVG path animated with GSAP inside a text clip. Adjust height and speed, move it with the pointer or arrow keys, pause it, and copy the current shape as an SVG.
+- **Particles (`/canvas`)**: Rapier2D rigid bodies inside a small box, drawn through a cached text mask. Choose 750, 1,500 or 2,500 bodies, scatter them with the pointer or the centre pulse, and pause or reset the scene.
 
-Both have visible navigation, native controls, explicit playback and a reduced-motion initial pause. The browser's hidden state also pauses the owned animation work. Physical touch, every browser/assistive technology and frame-rate performance are not certified.
+Both studies start paused when reduced motion is requested, and both rest while the tab is hidden.
 
-## Lifecycle and input boundary
+## Tech stack
 
-The particle scene checks Canvas before awaiting the local engine, suppresses late initialisation after disposal, owns/cancels its RAF, disconnects resize/visibility listeners and frees its world. A fixed timestep has bounded catch-up; display coordinates convert into the simulation's scene coordinates independently of CSS scale and DPR. Zero-distance impulses remain finite, and vertical splash uses its Y displacement.
+- Next.js 15 (App Router) with React 19
+- [GSAP](https://gsap.com/docs/v3/GSAP/Timeline/) for the SVG wave
+- [Rapier2D](https://rapier.rs/docs/user_guides/javascript/getting_started_js/) (WebAssembly) for the particles
+- Lucide icons
 
-The wave owns its idle timeline, interaction tween and one replaceable resume timer. Navigation/disposal clears all three. Each instance has a unique clip ID, and current-SVG export includes namespace, dimensions and font declarations. The font remains editable/system dependent.
+## Development
 
-## Local checks
-
-Use Node 24. No environment files or external services are needed.
+Uses Yarn 1.
 
 ```sh
-yarn install --ignore-scripts --frozen-lockfile
-yarn lint
-yarn test
-yarn build
-yarn start --hostname 127.0.0.1 --port 4846
+yarn install
+yarn dev
 ```
 
-Normal lint/build run the canonical icon source gate. Normal test runs all eleven shared icon regressions plus the motion, ownership and actual-control checks. Dependency and browser receipts are in `docs/quality/` once saved. All artwork, text masks and numerical notation remain domain content; UI icons use Lucide.
-
-Primary API references: [Rapier JavaScript guide](https://rapier.rs/docs/user_guides/javascript/getting_started_js/), [Rapier World ownership](https://rapier.rs/javascript2d/classes/World.html), [GSAP timelines](https://gsap.com/docs/v3/GSAP/Timeline/).
-
-The earlier README's approximate 60fps claim was not measured and has been removed. No new FPS, byte-size or broad no-leak guarantee is claimed from local checks.
-
-## Earlier published screenshot
-
-<img width="1708" height="980" alt="Screenshot 2025-10-31 at 13 51 56" src="https://github.com/user-attachments/assets/d853e47d-31a0-40e5-83ca-27efd7b63bea" />
-
-The screenshot predates this local controls and lifecycle review. See the verification receipt above for the checked candidate.
+Other scripts: `yarn test`, `yarn lint`, `yarn build`.
