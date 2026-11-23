@@ -36,3 +36,13 @@ it('reports an engine failure without scheduling animation',async()=>{
  const f=fixture(),status=vi.fn();const owned=mountParticleScene(document.createElement('canvas'),{count:4,paused:false,onStatus:status},{...f.runtime,load:async()=>{throw Error('WASM failed');}});
  await owned.ready;expect(status).toHaveBeenLastCalledWith('error');expect(f.frames.size).toBe(0);owned.dispose();
 });
+it('repaints with the scheme tokens when the system colour scheme changes, and stops listening on disposal',async()=>{
+ let change:(()=>void)|undefined;const media={matches:false,addEventListener:vi.fn((_:string,cb:()=>void)=>{change=cb;}),removeEventListener:vi.fn()};
+ vi.stubGlobal('matchMedia',vi.fn(()=>media));
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d') as unknown as {fillStyle:string;fillRect:ReturnType<typeof vi.fn>};
+ const fills:string[]=[];ctx.fillRect.mockImplementation(()=>{fills.push(ctx.fillStyle);});
+ const f=fixture(),owned=mountParticleScene(canvas,{count:4,paused:true,onStatus:vi.fn()},f.runtime);
+ await owned.ready;expect(fills.at(-1)).toBe('#10252e');
+ vi.spyOn(window,'getComputedStyle').mockReturnValue({getPropertyValue:(name:string)=>name==='--stage-deep'?'#d6e9e5':''} as unknown as CSSStyleDeclaration);change!();expect(fills.at(-1)).toBe('#d6e9e5');
+ owned.dispose();expect(media.removeEventListener).toHaveBeenCalledWith('change',change);vi.unstubAllGlobals();
+});

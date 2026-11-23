@@ -6,6 +6,14 @@ export function loadPhysics() {
   if(!enginePromise)enginePromise=import('@dimforge/rapier2d-compat').then(async module=>{await module.default.init();return module.default;}).catch(error=>{enginePromise=undefined;throw error;});
   return enginePromise;
 }
+const DARK_PALETTE={stage:'#10252e',outline:'#365762',particle:'#98dddc'};
+type Palette=typeof DARK_PALETTE;
+// The canvas paints with the page's scheme tokens; read them from CSS so light and dark stay in one place.
+function readPalette(canvas:HTMLCanvasElement):Palette{
+  const style=typeof getComputedStyle==='function'?getComputedStyle(canvas):null;
+  const token=(name:string,fallback:string)=>style?.getPropertyValue(name).trim()||fallback;
+  return {stage:token('--stage-deep',DARK_PALETTE.stage),outline:token('--canvas-outline',DARK_PALETTE.outline),particle:token('--particle',DARK_PALETTE.particle)};
+}
 interface Options {count:number;paused:boolean;onStatus:(status:'loading'|'ready'|'error')=>void}
 interface Runtime {load?:()=>Promise<Engine>;frame?:(callback:FrameRequestCallback)=>number;cancel?:(id:number)=>void}
 export function mountParticleScene(canvas:HTMLCanvasElement,options:Options,runtime:Runtime={}) {
@@ -17,12 +25,14 @@ export function mountParticleScene(canvas:HTMLCanvasElement,options:Options,runt
   const mask=document.createElement('canvas');mask.width=300;mask.height=100;
   const maskCtx=mask.getContext('2d');
   let pixels:Uint8ClampedArray|null=null;
+  let palette=readPalette(canvas);
+  const scheme=typeof window.matchMedia==='function'?window.matchMedia('(prefers-color-scheme: light)'):null;
   const spawn=(particle:RigidBody)=>{particle.setTranslation({x:60+Math.random()*180,y:40+Math.random()*25},true);particle.setLinvel({x:0,y:0},true);particle.resetForces(true);};
   const render=()=>{
     if(!ctx||!world||!pixels||disposed)return;
-    ctx.clearRect(0,0,300,100);ctx.fillStyle='#10252e';ctx.fillRect(0,0,300,100);
-    ctx.font='700 64px Arial';ctx.textAlign='center';ctx.strokeStyle='#365762';ctx.lineWidth=0.4;ctx.strokeText('LIQUID',150,70);
-    ctx.fillStyle='#98dddc';ctx.globalAlpha=0.88;ctx.beginPath();
+    ctx.clearRect(0,0,300,100);ctx.fillStyle=palette.stage;ctx.fillRect(0,0,300,100);
+    ctx.font='700 64px Arial';ctx.textAlign='center';ctx.strokeStyle=palette.outline;ctx.lineWidth=0.4;ctx.strokeText('LIQUID',150,70);
+    ctx.fillStyle=palette.particle;ctx.globalAlpha=0.88;ctx.beginPath();
     for(const particle of particles){const p=particle.translation(),x=Math.floor(p.x),y=Math.floor(p.y);if(x>=0&&x<300&&y>=0&&y<100&&pixels[(y*300+x)*4+3]>128){ctx.moveTo(p.x+1.2,p.y);ctx.arc(p.x,p.y,1.2,0,Math.PI*2);}}
     ctx.fill();ctx.globalAlpha=1;
   };
@@ -51,8 +61,9 @@ export function mountParticleScene(canvas:HTMLCanvasElement,options:Options,runt
     ctx.setTransform(canvas.width/SCENE.width,0,0,canvas.height/SCENE.height,0,0);render();
   };
   const visibility=()=>{hidden=document.hidden;stop();schedule();};
+  const schemeChange=()=>{palette=readPalette(canvas);render();};
   const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(resize);
-  if(ctx&&maskCtx){observer?.observe(canvas);window.addEventListener('resize',resize);document.addEventListener('visibilitychange',visibility);resize();}
+  if(ctx&&maskCtx){observer?.observe(canvas);window.addEventListener('resize',resize);document.addEventListener('visibilitychange',visibility);scheme?.addEventListener('change',schemeChange);resize();}
   const ready=(async()=>{
     if(!ctx||!maskCtx){options.onStatus('error');return;}
     options.onStatus('loading');
@@ -73,7 +84,7 @@ export function mountParticleScene(canvas:HTMLCanvasElement,options:Options,runt
       if(paused&&kind==='splash')advance();render();
     },
     reset(){if(disposed)return;particles.forEach(spawn);last=null;accumulator=0;render();},
-    dispose(){if(disposed)return;disposed=true;stop();observer?.disconnect();window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',visibility);world?.free();world=null;particles=[];},
+    dispose(){if(disposed)return;disposed=true;stop();observer?.disconnect();window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',visibility);scheme?.removeEventListener('change',schemeChange);world?.free();world=null;particles=[];},
   };
 }
 export type ParticleScene=ReturnType<typeof mountParticleScene>;
